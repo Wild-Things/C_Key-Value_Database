@@ -18,8 +18,8 @@ size_t hash(const char *val, int capacity) {
 		val++;
 	}
 
-	printf("%ld\n", (hash % (capacity-1)));
-	return hash % (capacity-1);
+	printf("%ld\n", (hash % (capacity)));
+	return hash % (capacity);
 }
 
 // fn kv_put
