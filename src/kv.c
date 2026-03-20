@@ -2,6 +2,10 @@
 #include <string.h>
 #include <stdlib.h>
 
+// fn hash
+// params:
+// - val: a string to provide for the hash
+// - capacity: integer for modulus return
 size_t hash(char *val, int capacity) {
 	size_t hash = 0x8021180211802118;
 
@@ -29,7 +33,7 @@ int kv_put(kv_t *db, char *key, char *value) {
 
 	size_t idx = hash(key, db->capacity);
 
-	for (int i = 0; i < db->capacity-1; i++) {
+	for (int i = 0; i < (db->capacity-1); i++) {
 		
 		size_t real_idx = (idx + 1) % db->capacity;
 
