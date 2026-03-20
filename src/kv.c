@@ -45,7 +45,7 @@ int kv_put(kv_t *db, char *key, char *value) {
 			char *newval = strdup(value);
 			if (!newval) return -1;
 			entry->value = newval;
-			return real_idx;
+			return (int)real_idx;
 		}
 
 		if (!entry->key || entry->key == (void*)TOMBSTONE) {
