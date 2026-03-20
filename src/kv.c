@@ -30,15 +30,18 @@ size_t hash(const char *val, int capacity) {
 // return -1, on not found returns -2
 
 int kv_put(kv_t *db, const char *key, const char *value) {
+
 	if (!db || !key || !value) return -1;
 
-	size_t idx = hash(key, db->capacity);
+	size_t idx = hash(key, db->capacity);	
 
 	for (int i = 0; i < (db->capacity-1); i++) {
 		
 		int real_idx = (idx + 1) % db->capacity;
 		kv_entry_t *entry = &db->entries[real_idx];
-		
+	
+		// entry was found, it was occupied, and
+		// the key matches	
 		if (entry->key &&
 		    entry->key != (void*)TOMBSTONE &&
 		    !strcmp(entry->key, key)) {
@@ -47,7 +50,9 @@ int kv_put(kv_t *db, const char *key, const char *value) {
 			entry->value = newval;
 			return 0;
 		}
-
+		
+		// Entry was not found, or entry was 
+		// tombstoned from a delete
 		if (!entry->key || entry->key == (void*)TOMBSTONE) {
 			char *newval = strdup(value);
 			char *newkey = strdup(key);
@@ -68,6 +73,38 @@ int kv_put(kv_t *db, const char *key, const char *value) {
 }
 
 char *kv_get(kv_t *db, const char *key) {
+
+	// if there are missing arguments,
+	// return null
+	if (!db || !key) {
+		return NULL;
+	}
+
+	// hash a key
+	size_t idx = hash(key, db->capacity);
+
+	for (int i = 0; i < (db->capacity-1); i++) {
+		
+		int real_idx = (idx + 1) % db->capacity;
+
+		kv_entry_t *entry = &db->entries[real_idx];
+		
+		// if the entry has no key, or has a 
+		// TOMBSTONE value, return nothing
+		if (entry->key == NULL || 
+			entry->key == (void*)TOMBSTONE) {
+			return NULL;
+		}
+
+		// if the entry is found and the keys
+		// match, return the value
+		if (entry->key && 
+			entry->key != (void*)TOMBSTONE &&
+			!strcmp(entry->key, key)) {
+			return entry->value;
+		}
+	}
+	// loop ends without anything found
 	return NULL;
 }
 
