@@ -36,15 +36,27 @@ int kv_put(kv_t *db, const char *key, const char *value) {
 		return -1;
 	}
 
-	size_t idx = hash(key, db->capacity);	
+	size_t idx = hash(key, db->capacity);
 
 	for (int i = 0; i < db->capacity-1; i++) {
 		
 		int real_idx = (idx + 1) % db->capacity;
 		kv_entry_t *entry = &db->entries[real_idx];
 
+		// if something exists and the key doesn't match,
+		// keep walking until a tombstone or empty
+		// space is found
+
+		if (entry->key && 
+			strcmp(entry->key, key)) {
+			do {
+				entry = &db->entries[real_idx + 1];
+			} while (entry->key ||
+					 entry->key == TOMBSTONE);
+		}
+
 		// entry was found, it was occupied, and
-		// the key matches	
+		// the key matches, update entry
 		if (entry->key &&
 		    entry->key != (void*)TOMBSTONE &&
 		    !strcmp(entry->key, key)) {
