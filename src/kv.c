@@ -11,6 +11,9 @@
 // returns: hash % capacity size_t
 size_t hash(const char *val, int capacity, char *func) {
 	size_t hash = 0x8021180211802118;
+	
+	// While there is still information at the
+	// memory address, process the hash
 	while(*val) {
 		hash ^= *val;
 		hash = hash << 8;
@@ -18,8 +21,6 @@ size_t hash(const char *val, int capacity, char *func) {
 
 		val++;
 	}
-
-	printf("hash result (%s - %s): %ld\n", func, val, (hash % capacity));
 
 	return hash % (capacity);
 }
@@ -34,6 +35,8 @@ size_t hash(const char *val, int capacity, char *func) {
 
 int kv_put(kv_t *db, const char *key, const char *value) {
 
+	// If no db, key, or value is present, ERROR  
+	// return -1
 	if (!db || !key || !value) {
 		return -1;
 	}
@@ -51,29 +54,41 @@ int kv_put(kv_t *db, const char *key, const char *value) {
 		    entry->key != (void*)TOMBSTONE &&
 		    !strcmp(entry->key, key)) {
 			char *newval = strdup(value);
+
 			if (!newval) return -1;
+
 			free(entry->value);
 			entry->value = newval;
+
 			return 0;
 		}
 		
-		// Entry was not found, or entry was 
-		// tombstoned from a delete
+		// If the entry was not found, or the 
+		// entry was tombstoned from a delete,
+		// set h=the entry to the new key and
+		// value and increment db count up by 1
 		if (!entry->key || 
 			entry->key == (void*)TOMBSTONE) {
 			char *newval = strdup(value);
 			char *newkey = strdup(key);
+
+			// If there is no value or key,
+			// free the memory and return -1
 			if (!newval || !newkey) { 
 				free(newkey);
 				free(newval);
+
 				return -1;
 			}
+
 			entry->value = newval;
 			entry->key = newkey;
 			db->count++;
+			
 			return 0;
 		}	
 	}
+
 	// if we get to the end, the database is occupied and
 	// we return -2
 	return -2;
