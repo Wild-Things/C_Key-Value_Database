@@ -51,6 +51,17 @@ int main() {
 
 	kv_delete(table, "fruit");
 
+	val1 = kv_get(table, "fruit");
+
+	// New line for formatting
+	printf("\n");
+
+
+	// Test output for kv_get
+	printf("%s\n%s\n%s\n%s\n\n", val1, val2, val3, val4);
+
+
+
 	// int fruit = hash_test("fruit", 16);
 	// int veggie = hash_test("veggie", 16);
 	// int grain = hash_test("grain", 16);
