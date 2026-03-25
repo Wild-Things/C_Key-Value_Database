@@ -118,8 +118,63 @@ char *kv_get(kv_t *db, const char *key) {
 	return NULL;
 }
 
+// fn kv_delete
+// params:
+// - db: a pointer to the database
+// - key: a pointer to the key value
+// returns: the index OR
+// -1 if not found
 int kv_delete(kv_t *db, const char *key) {
-	return 0;
+	if (!db || !key) return -1;
+
+	// Run the hash algorithm
+	size_t idx = hash(key, db->capacity, "kv_delete");
+
+	// Iterate over the whole database
+	for (int i = 0; i <db->capacity -1; i++) {
+
+		// This is the real position in the database
+		size_t real_idx = (idx + 1) % db->capacity;
+
+		// Entry pointer dereferencing to the database
+		// position
+		kv_entry_t *entry = &db->entries[real_idx];
+
+		// If the entry's key is null, ERROR -> return -1
+		if (entry->key == NULL) {
+			return -1;
+		}
+
+		// If the key exists,
+		// AND the key is not a tombstone
+		// AND the keys are the same
+		if (entry->key 
+			&& entry->key != TOMBSTONE 
+			&& !strcmp(entry->key, key)) {
+
+				// Free the memory for the entry key
+				free(entry->key);
+
+				// Free the memory for the entry value
+				free(entry->value);
+
+				// Increment the database entry count
+				// down by 1
+				db->count--;
+
+				// Change the entry's key to tombstone
+				entry->key = TOMBSTONE;
+				// Change the entry's value to NULL
+				entry->value = NULL;
+
+				// Return the index of the entry
+				return real_idx;
+			}
+	}
+
+	// Return -1 if nothing else happened
+	// Database is occupied
+	return -1;
 }
 
 void kv_free(kv_t *db) {
@@ -145,22 +200,24 @@ kv_t *kv_init(size_t capacity) {
 	return table;
 }
 
-size_t hash_test(const char *val, int capacity) {
-	size_t hash = 0x8021180211802118;
+// A troubleshooting variant for a hash collision
+//
+// size_t hash_test(const char *val, int capacity) {
+// 	size_t hash = 0x8021180211802118;
 	
-	while(*val) {
+// 	while(*val) {
 		
-		//printf("Cycle %d\n", i);
-		//printf("Starting values: %ld, %d\n\n", hash, *val);
-		hash ^= *val;
-		//printf("Hash XOR val: %ld, %d\n\n", hash, *val);
-		hash = hash << 8;
-		//printf("Hash bitshift 8: %ld, %d\n\n", hash, *val);
-		hash = hash / (*val+1);
-		//printf("Hash += val: %ld, %d\n\n", hash, *val);
+// 		//printf("Cycle %d\n", i);
+// 		//printf("Starting values: %ld, %d\n\n", hash, *val);
+// 		hash ^= *val;
+// 		//printf("Hash XOR val: %ld, %d\n\n", hash, *val);
+// 		hash = hash << 8;
+// 		//printf("Hash bitshift 8: %ld, %d\n\n", hash, *val);
+// 		hash = hash / (*val+1);
+// 		//printf("Hash += val: %ld, %d\n\n", hash, *val);
 		
-		//printf("======================\n");
-		val++;
-	}
-	return hash % capacity;
-}
+// 		//printf("======================\n");
+// 		val++;
+// 	}
+// 	return hash % capacity;
+// }
