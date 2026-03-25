@@ -7,9 +7,10 @@
 // params:
 // - val: a string to provide for the hash
 // - capacity: integer for modulus return
+// - func: name of the function calling the hash
+// returns: hash % capacity size_t
 size_t hash(const char *val, int capacity, char *func) {
 	size_t hash = 0x8021180211802118;
-	char *val_in = strdup(val);
 	while(*val) {
 		hash ^= *val;
 		hash = hash << 8;
@@ -18,7 +19,8 @@ size_t hash(const char *val, int capacity, char *func) {
 		val++;
 	}
 
-	printf("hash result (%s - %s): %ld\n", func, val_in, (hash % capacity));
+	printf("hash result (%s - %s): %ld\n", func, val, (hash % capacity));
+
 	return hash % (capacity);
 }
 
@@ -27,7 +29,7 @@ size_t hash(const char *val, int capacity, char *func) {
 //  - db: a pointer to the database memory address
 //  - key: a pointer to the key memory address
 //  - value: a pointer to the value memory address
-// Returns the index of the key, otherwise on error
+// returns: 0 on success, otherwise on error
 // return -1, on not found returns -2
 
 int kv_put(kv_t *db, const char *key, const char *value) {
@@ -50,6 +52,7 @@ int kv_put(kv_t *db, const char *key, const char *value) {
 		    !strcmp(entry->key, key)) {
 			char *newval = strdup(value);
 			if (!newval) return -1;
+			free(entry->value);
 			entry->value = newval;
 			return 0;
 		}
@@ -80,7 +83,7 @@ int kv_put(kv_t *db, const char *key, const char *value) {
 // params:
 //  - db: a pointer to the database memory address
 //  - key: a pointer to the key memory address
-// Returns the value of a key value pair, 
+// returns: the value of a key value pair, 
 // otherwise return null on error
 char *kv_get(kv_t *db, const char *key) {
 
@@ -152,24 +155,24 @@ int kv_delete(kv_t *db, const char *key) {
 			&& entry->key != (void *)TOMBSTONE 
 			&& !strcmp(entry->key, key)) {
 
-				// Free the memory for the entry key
-				free(entry->key);
+			// Free the memory for the entry key
+			free(entry->key);
 
-				// Free the memory for the entry value
-				free(entry->value);
+			// Free the memory for the entry value
+			free(entry->value);
 
-				// Increment the database entry count
-				// down by 1
-				db->count--;
+			// Increment the database entry count
+			// down by 1
+			db->count--;
 
-				// Change the entry's key to tombstone
-				entry->key = (void *)TOMBSTONE;
-				// Change the entry's value to NULL
-				entry->value = NULL;
+			// Change the entry's key to tombstone
+			entry->key = (void *)TOMBSTONE;
+			// Change the entry's value to NULL
+			entry->value = NULL;
 
-				// Return 0 indicating success
-				return 0;
-			}
+			// Return 0 indicating success
+			return 0;
+		}
 	}
 
 	// Return -1 if nothing else happened
@@ -177,8 +180,44 @@ int kv_delete(kv_t *db, const char *key) {
 	return -1;
 }
 
-void kv_free(kv_t *db) {
-	
+// fn kv_free
+// params:
+// - db: the pointer to the database
+// returns: 0 on succcess, or -1
+// on error
+int kv_free(kv_t *db) {
+
+	// if no database is provided, ERROR return -1
+	if (!db) return -1;
+
+	for (int i = 0; i < db->capacity - 1; i++) {
+
+		// Take the db entry at position index
+		kv_entry_t *entry = &db->entries[i];
+
+		// If the entry has a key and it's not
+		// TOMBSTONE, ree the memory of the entry
+		// key and entry value, assign NULL to
+		// both, and then increment the db counter
+		// down by 1
+		if (entry->key
+			&& entry->key != (void *)TOMBSTONE) {
+			free(entry->key);
+			free(entry->value);
+			entry->key = NULL;
+			entry->value = NULL;
+			db->count--;
+		}
+	}
+
+	// Free the database entries
+	free(db->entries);
+
+	// Free the database itself
+	free(db);
+
+	// Return 0 for success
+	return 0;
 }
 
 kv_t *kv_init(size_t capacity) {

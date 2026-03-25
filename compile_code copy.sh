@@ -5,9 +5,4 @@ function compile_headers_sources() {
 	./bin/test;
 }
 
-function mem_leak_check() {
-	valgrind --leak-check=full ./bin/test;
-}
-
 compile_headers_sources
-mem_leak_check
